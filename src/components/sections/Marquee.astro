@@ -1,0 +1,30 @@
+---
+// Pure CSS marquee — no JavaScript island, no hydration cost.
+const items = [
+  "Swipe together",
+  "Instant consensus",
+  "Solo-first",
+  "Private by default",
+  "Shared calendar",
+  "Memory timeline",
+  "Pune-first",
+  "No ads, ever",
+];
+// Duplicate the list so the CSS marquee loops seamlessly at -50%.
+const loop = [...items, ...items];
+---
+
+<section class="relative z-10 border-y border-border bg-surface/40 py-5">
+  <div class="flex overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+    <div class="flex shrink-0 animate-marquee items-center gap-10 pr-10">
+      {
+        loop.map((t) => (
+          <span class="flex items-center gap-10 whitespace-nowrap">
+            <span class="font-display text-xl italic text-text-muted">{t}</span>
+            <span class="h-1 w-1 rounded-full bg-primary/50" />
+          </span>
+        ))
+      }
+    </div>
+  </div>
+</section>

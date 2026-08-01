@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-bg text-text antialiased font-sans;
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: #fbd0dd;
+    color: #c8436a;
+  }
+
+  /* Visible focus ring everywhere (WCAG 2.4.7). Brand pink outline with a
+     light offset so it stays perceivable on dark panels and gradients too.
+     :focus-visible keeps mouse clicks from drawing rings. */
+  :focus-visible {
+    outline: 2px solid #e4557b;
+    outline-offset: 2px;
+  }
+
+  /* Editorial display type: tight, optical, a touch of italic romance */
+  .font-display {
+    font-feature-settings: 'liga' 1, 'dlig' 1;
+  }
+
+  /* Thin, refined scrollbar that matches the warm palette */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #fdf8f6;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #e7d6d0;
+    border-radius: 999px;
+    border: 3px solid #fdf8f6;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #d8c0b9;
+  }
+}
+
+@layer components {
+  /* Overline / eyebrow label — small caps tracking */
+  .overline {
+    @apply text-[11px] font-semibold uppercase tracking-overline text-primary;
+  }
+
+  /* The warm film-grain overlay. A fixed, pointer-events-none layer that
+     gives the whole page a tactile, printed-paper feel instead of flat SaaS. */
+  .grain::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.5;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  }
+
+  /* Ambient color washes — soft rose + violet blooms behind the content */
+  .ambient {
+    position: relative;
+  }
+  .ambient::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(42rem 42rem at 88% -8%, rgba(228, 85, 123, 0.16), transparent 60%),
+      radial-gradient(38rem 38rem at -10% 18%, rgba(108, 92, 231, 0.12), transparent 58%),
+      radial-gradient(50rem 40rem at 50% 120%, rgba(228, 85, 123, 0.1), transparent 60%);
+  }
+
+  /* Hairline divider with a centered dot — an editorial touch */
+  .rule-dot {
+    @apply flex items-center gap-3 text-text-subtle;
+  }
+  .rule-dot::before,
+  .rule-dot::after {
+    content: '';
+    @apply h-px flex-1 bg-border;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+}
+
+/* Respect users who opt out of motion — freeze the ambient loops.
+   (Framer-motion components also check this preference in JS.) */
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-float,
+  .animate-float-slow,
+  .animate-pulse-soft {
+    animation: none;
+  }
+}

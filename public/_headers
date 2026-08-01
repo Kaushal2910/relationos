@@ -1,0 +1,18 @@
+# Browser caching rules — Netlify / Cloudflare Pages `_headers` format.
+# Vercel uses vercel.json instead; a plain static host may ignore this file.
+# Actual Cache-Control/ETag + gzip/Brotli enforcement is host-level.
+
+# Content-hashed build assets — safe to cache forever.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Screenshots and the share card — long cache, but revalidate so new
+# screenshots (dropped in + `npm run optimize`) propagate within a day.
+/screens/*
+  Cache-Control: public, max-age=86400
+/og.png
+  Cache-Control: public, max-age=86400
+
+# HTML pages — always revalidate so content edits ship immediately.
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate

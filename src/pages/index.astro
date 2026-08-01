@@ -1,0 +1,24 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Hero } from '../components/sections/Hero.tsx';
+import Marquee from '../components/sections/Marquee.astro';
+import { SwipeShowcase } from '../components/sections/SwipeShowcase.tsx';
+import { PlanSection } from '../components/sections/PlanSection.tsx';
+import { SoloSection } from '../components/sections/SoloSection.tsx';
+import { MemoriesSection } from '../components/sections/MemoriesSection.tsx';
+import { Roadmap } from '../components/sections/Roadmap.tsx';
+import { FaqSection } from '../components/sections/FaqSection.tsx';
+import { DownloadCTA } from '../components/sections/DownloadCTA.tsx';
+---
+
+<Layout>
+  <Hero client:load />
+  <Marquee />
+  <SwipeShowcase client:visible />
+  <PlanSection client:visible />
+  <SoloSection client:visible />
+  <MemoriesSection client:visible />
+  <Roadmap client:visible />
+  <FaqSection client:visible />
+  <DownloadCTA client:visible />
+</Layout>

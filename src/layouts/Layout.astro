@@ -1,0 +1,340 @@
+---
+import '../styles/global.css';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { SITE_URL, SITE_NAME, FAQS } from '@/lib/seo';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'RelationOS — the relationship operating system',
+  description =
+    'A warm, private space for couples, friends, and family to decide together, plan together, and keep the memories forever.',
+} = Astro.props;
+
+// Preload the hero phone screenshot ONLY if it exists. public/screens is empty
+// until real app screenshots are dropped in (see scripts/optimize-assets.mjs),
+// so this avoids a 404 preload while placeholders are in use — and switches on
+// automatically once `npm run optimize` produces the .webp files.
+const heroShotHref = '/screens/discover.webp';
+const hasHeroShot = existsSync(
+  fileURLToPath(new URL('../../public/screens/discover.webp', import.meta.url)),
+);
+
+// ── JSON-LD structured data ─────────────────────────────────────────────────
+// SITE_URL mirrors `site:` in astro.config.mjs (see src/lib/seo.ts). Astro
+// absolutizes Astro.url against that config value, so canonical URLs stay
+// correct in builds even though the dev server runs on localhost.
+const isHome = Astro.url.pathname === '/';
+const canonical = Astro.url.href;
+
+// Mobile menu starts closed — the panel is `inert` until the toggle flips it.
+const menuOpen = false;
+
+// Organization — every page.
+const organizationLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: SITE_NAME,
+  url: SITE_URL,
+  description:
+    'RelationOS is a relationship-management app — a private, shared space for couples, friends, and family to decide together, plan together, and keep memories forever.',
+  logo: `${SITE_URL}/og.png`,
+};
+
+// SoftwareApplication + FAQPage — homepage only.
+const softwareApplicationLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: SITE_NAME,
+  applicationCategory: 'LifestyleApplication',
+  operatingSystem: 'Android, iOS',
+  description,
+  url: SITE_URL,
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+};
+
+const faqPageLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQS.map(({ q, a }) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+};
+
+// BreadcrumbList — every page (single level; the homepage crumb IS the page).
+const breadcrumbLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: isHome ? SITE_NAME : title,
+      item: canonical,
+    },
+  ],
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#FDF8F6" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23E4557B'/><path d='M16 23s-6-3.7-8-7.4C6.6 12.8 7.9 10 10.6 10c1.6 0 2.7.9 3.4 1.8l.3.5.3-.5c.7-.9 1.8-1.8 3.4-1.8 2.7 0 4 2.8 2.6 5.6C22 19.3 16 23 16 23z' fill='white'/></svg>"
+    />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/og.png" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content="/og.png" />
+
+    <!-- Typography: Instrument Serif (display) + Plus Jakarta Sans (UI) + JetBrains Mono (meta) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- LCP preload: the hero phone screenshot. Emitted only when the file
+         exists (see frontmatter) so there's no 404 while public/screens is
+         empty. fetchpriority=high promotes it ahead of CSS/JS in the queue —
+         this is the one place fetchpriority actually takes effect. -->
+    {
+      hasHeroShot && (
+        <link
+          rel="preload"
+          as="image"
+          href={heroShotHref}
+          fetchpriority="high"
+        />
+      )
+    }
+
+    <!-- Structured data (JSON-LD). Organization + BreadcrumbList on every
+         page; SoftwareApplication + FAQPage on the homepage only. -->
+    <script type="application/ld+json" set:html={JSON.stringify(organizationLd)} />
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbLd)} />
+    {
+      isHome && (
+        <>
+          <script type="application/ld+json" set:html={JSON.stringify(softwareApplicationLd)} />
+          <script type="application/ld+json" set:html={JSON.stringify(faqPageLd)} />
+        </>
+      )
+    }
+  </head>
+  <body class="grain ambient relative min-h-screen overflow-x-hidden">
+    <!-- Skip link — first focusable element (WCAG 2.4.1). Hidden until focused. -->
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-text focus:px-5 focus:py-3 focus:text-sm focus:font-semibold focus:text-bg focus:shadow-e3"
+    >
+      Skip to content
+    </a>
+
+    <!-- Navigation -->
+    <header
+      id="site-header"
+      class="fixed inset-x-0 top-0 z-50 transition-all duration-300"
+    >
+      <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
+        <a href="/#main-content" class="group flex items-center gap-2.5">
+          <span class="grid h-8 w-8 place-items-center rounded-xl bg-primary text-white shadow-e1 transition-transform group-hover:-rotate-6">
+            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
+              <path d="M12 21s-7.5-4.6-10-9.2C.4 8.5 2 5 5.4 5c2 0 3.4 1.1 4.2 2.3l.4.6.4-.6C11.2 6.1 12.6 5 14.6 5 18 5 19.6 8.5 22 11.8 19.5 16.4 12 21 12 21z" />
+            </svg>
+          </span>
+          <span class="font-display text-2xl leading-none tracking-tight text-text">
+            Relation<span class="italic text-primary">OS</span>
+          </span>
+        </a>
+
+        <nav aria-label="Primary" class="hidden items-center gap-9 text-sm font-medium text-text-muted md:flex">
+          <a href="/#features" class="relative transition-colors hover:text-text">Features</a>
+          <a href="/#plan" class="relative transition-colors hover:text-text">Plan</a>
+          <a href="/#solo" class="relative transition-colors hover:text-text">Solo first</a>
+          <a href="/#memories" class="relative transition-colors hover:text-text">Memories</a>
+          <a href="/#roadmap" class="relative transition-colors hover:text-text">Roadmap</a>
+        </nav>
+
+        <div class="flex items-center gap-3">
+          <a
+            href="/#download"
+            class="hidden rounded-full bg-text px-5 py-2.5 text-sm font-semibold text-bg transition-all hover:bg-primary hover:text-white sm:inline-flex"
+          >
+            Get the app
+          </a>
+          <!-- Mobile menu toggle -->
+          <button
+            id="menu-toggle"
+            type="button"
+            aria-label="Open menu"
+            aria-expanded="false"
+            aria-controls="mobile-menu"
+            class="grid h-10 w-10 place-items-center rounded-full bg-text text-bg md:hidden"
+          >
+            <svg id="menu-icon" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile menu panel — inert while closed so its links can't be
+           tabbed to while invisible (WCAG 2.4.3). The toggle script flips
+           aria-expanded; `inert` is removed on open via the same handler. -->
+      <div
+        id="mobile-menu"
+        inert={!menuOpen}
+        class="pointer-events-none max-h-0 overflow-hidden opacity-0 transition-all duration-300 md:hidden"
+      >
+        <nav aria-label="Mobile" class="mx-4 mb-4 flex flex-col gap-1 rounded-card border border-border bg-surface p-4 shadow-e2">
+          <a href="/#features" class="mobile-link rounded-xl px-4 py-3 text-sm font-medium text-text-muted transition-colors hover:bg-surface-alt hover:text-text">Features</a>
+          <a href="/#plan" class="mobile-link rounded-xl px-4 py-3 text-sm font-medium text-text-muted transition-colors hover:bg-surface-alt hover:text-text">Plan</a>
+          <a href="/#solo" class="mobile-link rounded-xl px-4 py-3 text-sm font-medium text-text-muted transition-colors hover:bg-surface-alt hover:text-text">Solo first</a>
+          <a href="/#memories" class="mobile-link rounded-xl px-4 py-3 text-sm font-medium text-text-muted transition-colors hover:bg-surface-alt hover:text-text">Memories</a>
+          <a href="/#roadmap" class="mobile-link rounded-xl px-4 py-3 text-sm font-medium text-text-muted transition-colors hover:bg-surface-alt hover:text-text">Roadmap</a>
+          <a href="/#download" class="mobile-link mt-2 rounded-xl bg-primary px-4 py-3 text-center text-sm font-semibold text-white">Get the app</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main id="main-content" class="relative z-10">
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-10 border-t border-border bg-surface-alt/60">
+      <div class="mx-auto max-w-7xl px-5 py-16 sm:px-8">
+        <div class="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          <div>
+            <a href="/#main-content" class="flex items-center gap-2.5">
+              <span class="grid h-8 w-8 place-items-center rounded-xl bg-primary text-white">
+                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
+                  <path d="M12 21s-7.5-4.6-10-9.2C.4 8.5 2 5 5.4 5c2 0 3.4 1.1 4.2 2.3l.4.6.4-.6C11.2 6.1 12.6 5 14.6 5 18 5 19.6 8.5 22 11.8 19.5 16.4 12 21 12 21z" />
+                </svg>
+              </span>
+              <span class="font-display text-2xl leading-none tracking-tight text-text">
+                Relation<span class="italic text-primary">OS</span>
+              </span>
+            </a>
+            <p class="mt-5 max-w-xs text-sm leading-relaxed text-text-muted text-pretty">
+              The shared dashboard for your inner circle. Decide, plan, and preserve the
+              moments that matter — together, or on your own.
+            </p>
+          </div>
+
+          <div>
+            <h2 class="font-mono text-xs uppercase tracking-overline text-text-subtle">Product</h2>
+            <ul class="mt-4 space-y-3 text-sm text-text-muted">
+              <li><a href="/#features" class="transition-colors hover:text-primary">Features</a></li>
+              <li><a href="/#plan" class="transition-colors hover:text-primary">Plan</a></li>
+              <li><a href="/#solo" class="transition-colors hover:text-primary">Solo mode</a></li>
+              <li><a href="/#memories" class="transition-colors hover:text-primary">Memories</a></li>
+              <li><a href="/#roadmap" class="transition-colors hover:text-primary">Roadmap</a></li>
+            </ul>
+          </div>
+          <div>
+            <h2 class="font-mono text-xs uppercase tracking-overline text-text-subtle">Company</h2>
+            <ul class="mt-4 space-y-3 text-sm text-text-muted">
+              <li><a href="/privacy" class="transition-colors hover:text-primary">Privacy</a></li>
+              <li><a href="/terms" class="transition-colors hover:text-primary">Terms</a></li>
+              <li><a href="mailto:hello@relationos.app" class="transition-colors hover:text-primary">Contact</a></li>
+            </ul>
+          </div>
+          <div>
+            <h2 class="font-mono text-xs uppercase tracking-overline text-text-subtle">Get it</h2>
+            <ul class="mt-4 space-y-3 text-sm text-text-muted">
+              <li class="flex items-center gap-2">
+                iOS
+                <span class="rounded-full bg-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-text-subtle">Coming soon</span>
+              </li>
+              <li class="flex items-center gap-2">
+                Android
+                <span class="rounded-full bg-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-text-subtle">Coming soon</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-14 flex flex-col items-start justify-between gap-4 border-t border-border pt-8 sm:flex-row sm:items-center">
+          <p class="font-mono text-xs text-text-subtle">© 2026 RelationOS · Made in Pune</p>
+          <p class="font-display text-lg italic text-text-muted">
+            Plans made together. Memories kept forever.
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Scroll-aware header hairline + mobile menu -->
+    <script>
+      const header = document.getElementById('site-header');
+      const onScroll = () => {
+        if (window.scrollY > 8) {
+          header?.classList.add('border-b', 'border-border', 'bg-bg/85', 'backdrop-blur-md');
+        } else {
+          header?.classList.remove('border-b', 'border-border', 'bg-bg/85', 'backdrop-blur-md');
+        }
+      };
+      onScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      // Mobile menu
+      const toggle = document.getElementById('menu-toggle');
+      const menu = document.getElementById('mobile-menu');
+      const menuIcon = document.querySelector('#menu-icon path');
+      let open = false;
+      const setMenu = (next: boolean) => {
+        open = next;
+        toggle?.setAttribute('aria-expanded', String(open));
+        toggle?.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+        if (open) {
+          menu?.removeAttribute('inert');
+          menu?.classList.remove('pointer-events-none', 'max-h-0', 'opacity-0');
+          menu?.classList.add('max-h-96', 'opacity-100');
+          menuIcon?.setAttribute('d', 'M6 6l12 12M18 6L6 18');
+          // Move focus into the menu so keyboard users land on the first link.
+          menu?.querySelector('a')?.focus();
+        } else {
+          menu?.setAttribute('inert', '');
+          menu?.classList.add('pointer-events-none', 'max-h-0', 'opacity-0');
+          menu?.classList.remove('max-h-96', 'opacity-100');
+          menuIcon?.setAttribute('d', 'M4 7h16M4 12h16M4 17h16');
+        }
+      };
+      toggle?.addEventListener('click', () => setMenu(!open));
+      document.querySelectorAll('.mobile-link').forEach((link) => {
+        link.addEventListener('click', () => {
+          setMenu(false);
+          toggle?.focus();
+        });
+      });
+    </script>
+  </body>
+</html>
